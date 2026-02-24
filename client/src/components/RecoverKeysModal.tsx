@@ -19,38 +19,64 @@ export default function RecoverKeysModal({ onClose }: Props) {
   const [result, setResult] = useState<any>(null);
 
   const handleRequest = async () => {
-    if (type === "site") {
-      await api.post("/api/site/recover-site/request", {
-        client_admin_email: email,
-        site_name: siteName,
-      });
-    } else {
-      await api.post("/api/client/recover-client/request", {
-        client_admin_email: email,
-      });
-    }
+    try {
+      if (!email) {
+        alert("Email is required");
+        return;
+      }
 
-    setMode("otp");
+      if (type === "site") {
+        if (!siteName) {
+          alert("Site name is required");
+          return;
+        }
+
+        await api.post("/api/site/recover-site/request", {
+          client_admin_email: email,
+          site_name: siteName,
+        });
+
+      } else {
+        await api.post("/api/clients/recover-client-id", {
+          email,
+        });
+      }
+
+      setMode("otp");
+    } catch (error: any) {
+      alert(error.response?.data?.message || "Failed to send OTP");
+    }
   };
 
   const handleVerify = async () => {
-    let res;
+    try {
+      if (!otp) {
+        alert("OTP is required");
+        return;
+      }
 
-    if (type === "site") {
-      res = await api.post("/api/site/recover-site/verify", {
-        client_admin_email: email,
-        site_name: siteName,
-        otp,
-      });
-    } else {
-      res = await api.post("/api/client/recover-client/verify", {
-        client_admin_email: email,
-        otp,
-      });
+      let res;
+
+      if (type === "site") {
+        res = await api.post("/api/site/recover-site/verify", {
+          client_admin_email: email,
+          site_name: siteName,
+          otp,
+        });
+
+      } else {
+        res = await api.post("/api/clients/recover-client-id/verify", {
+          email,
+          otp,
+        });
+      }
+
+      setResult(res.data);
+      setMode("success");
+
+    } catch (error: any) {
+      alert(error.response?.data?.message || "OTP verification failed");
     }
-
-    setResult(res.data);
-    setMode("success");
   };
 
   const downloadJSON = () => {
